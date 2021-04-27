@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <title>Code Compiler</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+</head>
+
+<body>
+    <div class="container d-grid gap-3">
+        <div class="row p-2">
+            <ul class="nav">
+                <li class="nav-item">
+                    <label>Language:&nbsp;</label>
+                    <select id="lang">
+                        <option value="c" selected>C</option>
+                        <option value="cpp">C++</option>
+                        <option value="java">Java</option>
+                        <option value="python">Python</option>
+                        <option value="javascript">Javascript</option>
+                    </select>
+                </li>
+                <li class="nav-item">
+                    <label>&nbsp;&nbsp;Theme:</label>
+                    <select id="theme">
+                        <option value="github">Github</option>
+                        <option value="dracula">Dracula</option>
+                        <option value="monokai" selected>Monokai</option>
+                        <option value="terminal">Terminal</option>
+                    </select>
+                </li>
+            </ul>
+        </div>
+        <div class="row">
+            <div id="editor" style=" height:500px">
+                //Write your code here
+            </div>
+        </div>
+        <div class="row">
+            <div class="col">
+                <button type="button" id="submit" class="btn btn-warning">
+                    Submit
+                </button>
+            </div>
+        </div>
+        <div class="row p-2">
+            Console:
+        </div>
+        <div id="console" class="row bg-dark text-white p-2" style="height:100px">
+            
+        </div>
+        <div class="row" style="height:100px">
+            
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"
+    integrity="sha512-GZ1RIgZaSc8rnco/8CXfRdCpDxRCphenIiZ2ztLy3XQfCbQUSCuk8IudvNHxkRA3oUg6q0qejgN/qqyG1duv5Q=="
+    crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.min.js"
+    integrity="sha512-8qx1DL/2Wsrrij2TWX5UzvEaYOFVndR7BogdpOyF4ocMfnfkw28qt8ULkXD9Tef0bLvh3TpnSAljDC7uyniEuQ=="
+    crossorigin="anonymous"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        var editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.setValue(getStub("c"))
+        editor.session.setMode("ace/mode/c_cpp");
+        editor.setOptions({
+                enableLiveAutocompletion: true,
+                enableSnippets: true
+            });
+
+        function getID(lang){
+            switch(lang){
+                case "c":
+                    return 7;
+                case "cpp":
+                    return 77;
+                case "java":
+                    return 8;
+                case "python":
+                    return 0;
+                case "javascript":
+                    return 4;
+            }
+        }
+
+        $("#theme").change(function(){
+            console.log($(this).val());
+
+            editor.setTheme("ace/theme/"+$(this).val());
+        });
+
+        function getStub(lang){
+            switch(lang){
+                case "c":
+                    return "#include<stdio.h>\n\nint main(){\n\tprintf(\"Hello\");\n}";
+                case "cpp":
+                    return "#include<iostream>\n#include<cstdio>\n#include<cmath>\nusing namespace std;\nint main(){\n\treturn 0;\n}"
+                case "java":
+                    return "import java.util.Scanner;\n// Other imports go here\n// Do NOT change the class name\nclass Main{     \n\tpublic static void main(String[] args){\n\t\t// Write your code here \n\t}\n}";
+                case "python":
+                    return "#Type your code here";
+                case "javascript":
+                    return "//Type your code here";
+            }
+        }
+
+        $("#lang").change(function(){
+
+            console.log($(this).val());
+            const lang = $(this).val();
+            editor.setValue(getStub(lang))
+            if (lang === "c" || lang === "cpp")
+                editor.session.setMode("ace/mode/c_cpp");
+            else
+                editor.session.setMode("ace/mode/"+$(this).val());
+        });
+
+        $("#submit").click(function(){
+            const url="https://codequotient.com/api/executeCode";
+            const lang = $("#lang").val();
+            const id=getID(lang);
+
+            const data={
+                code:editor.getValue(),
+                langId:id
+            };
+
+
+            $.post(url,data,function(result){
+                $("#console").text("Compiling...");
+
+                var getUrl = "https://codequotient.com/api/codeResult/"+result.codeId;
+
+                setTimeout(() => {
+                    $.get(getUrl,function(data){
+                        var output=JSON.parse(data.data);
+                        if(output.errors){
+                            $("#console").text(output.errors);
+                        }
+                        else{
+                            $("#console").text(output.output);
+                        }
+                        console.log(output);
+                    })
+                }, 5000);
+
+
+
+                console.log(result);
+            });
+
+            console.log(lang,id);
+        });
+
+    </script>
+</body>
+
+</html>
